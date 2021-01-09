@@ -2,6 +2,14 @@ import tornado.web
 import json
 import re
 
+indexHtml = """
+<h1>Search phrase list using a regex</h1>
+<p>Search using: /regexWordList/[regex]</p>
+<form method='get' action="/regexWordList/">
+regex to search: <input type="text" name="regex"></input>
+</form>
+"""
+
 wordList = [
     ("hello", 1),
     ("hello2", 2),
@@ -9,10 +17,22 @@ wordList = [
 ]
 
 class RegexWordList(tornado.web.RequestHandler):
-    def get(self, regexUrlComponent):
+    def get(self, regexUrlComponent=None):
         """ This is what gets called when the user request the page specified below in the requests list """
         # Any URL encoding in the component will have been undone before getting here
+
+        # If you use the form above to query, then it will come through as the regex 'get' argument instead
+        if not regexUrlComponent:
+            regexUrlComponent = self.get_argument("regex", "")
+            if regexUrlComponent == "":
+                message = "Need to specify a regex"
+                raise tornado.web.HTTPError(status_code=400, reason=message, log_message=message)
+
         print(regexUrlComponent)
+
+        if regexUrlComponent.startswith("?regex="):
+            regexUrlComponent = regexUrlComponent[7:]
+
         try:
             # Attempt to compile the regex for later use
             # If the user has given a bad regex, then this can except
@@ -49,4 +69,9 @@ class RegexWordList(tornado.web.RequestHandler):
 requests = [
     # Match against anything specified after regexWordList, treating the entire rest of the string as the regex
     (r"/regexWordList/(.+)", RegexWordList),
+    (r"/regexWordList/", RegexWordList),
+]
+
+indexItems = [
+    indexHtml,
 ]
